@@ -190,7 +190,7 @@ function ResourceRow({ resource }: { resource: Resource }) {
           {year ? ` · ${year}` : ""}
         </p>
         <h2 className="row-title">
-          <Link href={`/api/resources/${resource.slug}`}>{resource.title}</Link>
+          <Link href={`/r/${resource.slug}`}>{resource.title}</Link>
         </h2>
         {byline ? <p className="row-byline">{byline}</p> : null}
         {resource.cliffNotes ? (
