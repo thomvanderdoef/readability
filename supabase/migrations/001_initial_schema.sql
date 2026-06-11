@@ -29,20 +29,12 @@ create table if not exists public.resources (
   personal_notes text,
   cover_image_url text,
   source_domain text,
-  is_essential boolean not null default false,
-  search_vector tsvector generated always as (
-    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
-    setweight(to_tsvector('english', array_to_string(authors, ' ')), 'B') ||
-    setweight(to_tsvector('english', array_to_string(tags, ' ')), 'B') ||
-    setweight(to_tsvector('english', coalesce(cliff_notes, '')), 'C') ||
-    setweight(to_tsvector('english', coalesce(personal_notes, '')), 'C')
-  ) stored
+  is_essential boolean not null default false
 );
 
 create index if not exists resources_collection_id_idx on public.resources(collection_id);
 create index if not exists resources_status_idx on public.resources(status);
 create index if not exists resources_type_idx on public.resources(type);
-create index if not exists resources_search_vector_idx on public.resources using gin(search_vector);
 
 create or replace function public.set_updated_at()
 returns trigger
