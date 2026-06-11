@@ -363,6 +363,10 @@ function clampInteger(
   minimum: number,
   maximum: number,
 ) {
+  if (value === null) {
+    return fallback;
+  }
+
   const parsed = Number(value);
 
   if (!Number.isInteger(parsed)) {
