@@ -1,11 +1,25 @@
-import { initialCollection, libraryName, resourceTypes } from "@/lib/library";
+import {
+  aboutUrlFor,
+  hasLibraryRequestAccess,
+  unauthorizedJson,
+} from "@/lib/access";
+import { libraryName, resourceTypes } from "@/lib/library";
+import { getLibraryMeta } from "@/lib/resources";
 
-export function GET() {
+export const dynamic = "force-dynamic";
+
+export async function GET(request: Request) {
+  if (!hasLibraryRequestAccess(request)) {
+    return unauthorizedJson();
+  }
+
+  const collections = await getLibraryMeta();
+
   return Response.json({
-    _about: "/llms.txt",
+    _about: aboutUrlFor(request),
     name: libraryName,
-    collections: [initialCollection],
+    collections,
     resourceTypes,
-    status: "bootstrap",
+    status: "ok",
   });
 }

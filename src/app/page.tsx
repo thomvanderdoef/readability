@@ -1,6 +1,158 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { hasLibraryCookieAccess, isValidLibraryKey } from "@/lib/access";
+import { resourceTypes } from "@/lib/library";
+import {
+  getCollections,
+  getResources,
+  parseResourceQuery,
+  Resource,
+} from "@/lib/resources";
 
-export default function Home() {
+type HomeProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export const dynamic = "force-dynamic";
+
+const statuses = ["unread", "reading", "read"] as const;
+
+export default async function Home({ searchParams }: HomeProps) {
+  const resolvedSearchParams = await searchParams;
+  const params = toURLSearchParams(resolvedSearchParams);
+  const isAuthorized =
+    isValidLibraryKey(params.get("k")) || (await hasLibraryCookieAccess());
+
+  if (!isAuthorized) {
+    return <LockedPage />;
+  }
+
+  const query = parseResourceQuery(params);
+  const [collections, resources] = await Promise.all([
+    getCollections(),
+    getResources(query),
+  ]);
+  const activeCollection = collections.find(
+    (collection) => collection.slug === query.collection,
+  );
+
+  return (
+    <main>
+      <header className="app-header">
+        <Link className="wordmark" href="/">
+          Readable<span className="wordmark-dot">.</span>
+        </Link>
+        <form className="header-form" action="/">
+          {query.collection ? (
+            <input type="hidden" name="collection" value={query.collection} />
+          ) : null}
+          {query.status ? (
+            <input type="hidden" name="status" value={query.status} />
+          ) : null}
+          {query.types?.map((type) => (
+            <input key={type} type="hidden" name="type" value={type} />
+          ))}
+          {query.tags?.map((tag) => (
+            <input key={tag} type="hidden" name="tag" value={tag} />
+          ))}
+          <input
+            className="header-search"
+            name="q"
+            placeholder="Search the library"
+            defaultValue={query.q ?? ""}
+          />
+        </form>
+      </header>
+
+      <section className="filter-bar" aria-label="Library filters">
+        <div className="collection-row">
+          <span className="collection-label">Collection</span>
+          <div className="type-chips">
+            <FilterLink
+              href={withParam(params, "collection", undefined)}
+              isActive={!query.collection}
+            >
+              All
+            </FilterLink>
+            {collections.map((collection) => (
+              <FilterLink
+                key={collection.slug}
+                href={withParam(params, "collection", collection.slug)}
+                isActive={query.collection === collection.slug}
+              >
+                {collection.name}
+              </FilterLink>
+            ))}
+          </div>
+        </div>
+
+        <div className="seg-control" aria-label="Read status">
+          <FilterLink
+            href={withParam(params, "status", undefined)}
+            isActive={!query.status}
+            className="seg-link"
+          >
+            All
+          </FilterLink>
+          {statuses.map((status) => (
+            <FilterLink
+              key={status}
+              href={withParam(params, "status", status)}
+              isActive={query.status === status}
+              className="seg-link"
+            >
+              {capitalize(status)}
+            </FilterLink>
+          ))}
+        </div>
+
+        <div className="type-chips" aria-label="Resource types">
+          {resourceTypes.map((type) => {
+            const activeTypes = query.types ?? [];
+            const isActive = activeTypes.includes(type);
+            const nextTypes = isActive
+              ? activeTypes.filter((activeType) => activeType !== type)
+              : [...activeTypes, type];
+
+            return (
+              <FilterLink
+                key={type}
+                href={withParam(params, "type", nextTypes)}
+                isActive={isActive}
+              >
+                {capitalize(type)}
+              </FilterLink>
+            );
+          })}
+        </div>
+
+      </section>
+
+      <section className="library" aria-label="Library resources">
+        <div className="library-intro">
+          <p className="setup-kicker">Private library</p>
+          <h1>{activeCollection?.name ?? "All research resources"}</h1>
+          <p>
+            {activeCollection?.description ??
+              "A curated, AI-legible shelf of books, papers, articles, and media."}
+          </p>
+        </div>
+
+        {resources.length > 0 ? (
+          resources.map((resource) => (
+            <ResourceRow key={resource.id} resource={resource} />
+          ))
+        ) : (
+          <div className="empty-state">
+            No resources match these filters yet.
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
+
+function LockedPage() {
   return (
     <main>
       <header className="app-header">
@@ -23,13 +175,124 @@ export default function Home() {
         </p>
 
         <div className="setup-panel">
-          <p className="setup-kicker">Bootstrap milestone</p>
+          <p className="setup-kicker">Private read path</p>
           <p>
-            The deployable skeleton is in place. Database schema, seed data, and
-            the private read path are being wired next.
+            Use the owner&apos;s shared link to unlock this browser. API callers
+            can include the same key on each request.
           </p>
         </div>
       </section>
     </main>
   );
+}
+
+function ResourceRow({ resource }: { resource: Resource }) {
+  const byline = [
+    resource.authors.join(", "),
+    resource.publisher,
+    resource.publishedDate ? new Date(resource.publishedDate).getFullYear() : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <article className="row">
+      <div className="row-main">
+        <p className="row-over">
+          {resource.collection.name} · {capitalize(resource.type)}
+          {resource.isEssential ? " · Essential" : ""}
+        </p>
+        <h2 className="row-title">
+          <Link href={`/api/resources/${resource.slug}`}>{resource.title}</Link>
+        </h2>
+        {byline ? <p className="row-byline">{byline}</p> : null}
+        {resource.cliffNotes ? (
+          <p className="row-desc">{truncate(resource.cliffNotes, 240)}</p>
+        ) : null}
+        <div className="row-tags" aria-label="Tags">
+          {resource.tags.slice(0, 5).map((tag) => (
+            <Link key={tag} className="dtag" href={`/?tag=${encodeURIComponent(tag)}`}>
+              {tag}
+            </Link>
+          ))}
+        </div>
+      </div>
+      <div className="row-side">
+        <div className="thumb" aria-hidden="true">
+          {resource.title.slice(0, 1)}
+        </div>
+        <span className="status-dot" data-s={resource.status} aria-label={resource.status} />
+      </div>
+    </article>
+  );
+}
+
+function FilterLink({
+  children,
+  className = "tchip",
+  href,
+  isActive,
+}: {
+  children: ReactNode;
+  className?: string;
+  href: string;
+  isActive: boolean;
+}) {
+  return (
+    <Link className={`${className}${isActive ? " active" : ""}`} href={href}>
+      {children}
+    </Link>
+  );
+}
+
+function toURLSearchParams(
+  searchParams: Record<string, string | string[] | undefined> | undefined,
+) {
+  const params = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(searchParams ?? {})) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        params.append(key, item);
+      }
+    } else if (value) {
+      params.set(key, value);
+    }
+  }
+
+  return params;
+}
+
+function withParam(
+  currentParams: URLSearchParams,
+  key: string,
+  value: string | string[] | undefined,
+) {
+  const params = new URLSearchParams(currentParams);
+  params.delete("k");
+  params.delete(key);
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      params.append(key, item);
+    }
+  } else if (value) {
+    params.set(key, value);
+  }
+
+  const query = params.toString();
+
+  return query ? `/?${query}` : "/";
+}
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function truncate(value: string, maxLength: number) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength).trim()}...`;
 }

@@ -1,21 +1,41 @@
+import {
+  aboutUrlFor,
+  hasLibraryRequestAccess,
+  unauthorizedJson,
+} from "@/lib/access";
+import { getResourceBySlug } from "@/lib/resources";
+
 type Context = {
   params: Promise<{
     slug: string;
   }>;
 };
 
-export async function GET(_request: Request, context: Context) {
-  const { slug } = await context.params;
+export const dynamic = "force-dynamic";
 
-  return Response.json(
-    {
-      _about: "/llms.txt",
-      slug,
-      status: "bootstrap",
-      message: "Resource detail storage will be wired in the read-path milestone.",
-    },
-    {
-      status: 404,
-    },
-  );
+export async function GET(request: Request, context: Context) {
+  if (!hasLibraryRequestAccess(request)) {
+    return unauthorizedJson();
+  }
+
+  const { slug } = await context.params;
+  const resource = await getResourceBySlug(slug);
+
+  if (!resource) {
+    return Response.json(
+      {
+        _about: aboutUrlFor(request),
+        error: "Resource not found.",
+      },
+      {
+        status: 404,
+      },
+    );
+  }
+
+  return Response.json({
+    _about: aboutUrlFor(request),
+    resource,
+    status: "ok",
+  });
 }
