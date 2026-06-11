@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<title>Readable — Design Mockup v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light only;
+    --bg: #ffffff;
+    --ink: #1a1a1a;
+    --gray: #4f4f4f;        /* secondary text — AA on white */
+    --faint: #6e6e6e;       /* tertiary text — still ≥4.5:1 */
+    --hairline: #ececec;
+    --wash: #f6f6f6;
+    --thumb-bg: #f1f1f1;
+    --thumb-letter: #cfcfcf;
+    --accent: #ff6719;
+    --accent-deep: #c2410c;
+    --accent-wash: #fff1e8;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --serif: "Source Serif 4", Georgia, serif;
+    /* the two text sizes */
+    --t-body: 17px;   /* anything you read or type */
+    --t-ui: 14px;     /* every label, byline, button, meta */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color-scheme: light only; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--t-body);
+    line-height: 1.55;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (prefers-color-scheme: dark) {
+    html, body { background: #ffffff !important; color: #1a1a1a !important; }
+  }
+  button { font: inherit; cursor: pointer; background: none; border: none; color: inherit; }
+  input, select, textarea { font: inherit; color: var(--ink); }
+  a { color: var(--ink); }
+
+  /* ================= MOCKUP CHROME (not part of app design) ================= */
+  .mock-chrome {
+    background: #1c1c1c;
+    color: #b5b5b5;
+    font-family: var(--sans);
+    font-size: 13px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .mock-label { color: #8a8a8a; letter-spacing: 0.06em; text-transform: uppercase; font-size: 11px; }
+  .mock-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .mock-tab { border: 1px solid #3a3a3a; color: #b5b5b5; padding: 4px 10px; border-radius: 4px; }
+  .mock-tab.active { background: #fff; color: #1c1c1c; border-color: #fff; }
+  .mock-admin { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .mock-switch { width: 34px; height: 18px; border-radius: 9px; background: #3a3a3a; position: relative; transition: background .2s; padding: 0; }
+  .mock-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #b5b5b5; transition: left .2s, background .2s; }
+  .mock-switch.on { background: var(--accent); }
+  .mock-switch.on::after { left: 18px; background: #fff; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ================= APP HEADER ================= */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    height: 60px;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--hairline);
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  .wordmark {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 21px;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .wordmark .dot { color: var(--accent); }
+  .collection-select {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    background: var(--wash);
+    border: none;
+    border-radius: 17px;
+    padding: 7px 12px;
+    color: var(--gray);
+    max-width: 230px;
+  }
+  .header-search {
+    flex: 1;
+    max-width: 340px;
+    border: none;
+    border-radius: 20px;
+    background: var(--wash);
+    padding: 8px 16px;
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    color: var(--ink);
+  }
+  .header-search::placeholder { color: var(--faint); }
+  .header-search:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: #fff; }
+  .header-spacer { flex: 1; }
+  .btn {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    font-weight: 600;
+    border-radius: 18px;
+    padding: 8px 16px;
+    flex-shrink: 0;
+  }
+  .btn.primary { background: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-deep); }
+  .btn.ghost { color: var(--gray); }
+  .btn.ghost:hover { color: var(--ink); }
+  .admin-only { display: none; }
+  body.admin .admin-only { display: inline-flex; }
+
+  /* ================= FILTER ROW ================= */
+  .filter-bar {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 18px 24px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .seg-control {
+    display: flex;
+    background: var(--wash);
+    border-radius: 19px;
+    padding: 3px;
+  }
+  .seg-control button {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    color: var(--gray);
+    padding: 6px 14px;
+    border-radius: 16px;
+    white-space: nowrap;
+  }
+  .seg-control button.active { background: var(--ink); color: #fff; font-weight: 600; }
+  .type-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tchip {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    color: var(--gray);
+    padding: 7px 14px;
+    border-radius: 17px;
+    background: var(--wash);
+    white-space: nowrap;
+  }
+  .tchip.active { background: var(--accent-wash); color: var(--accent-deep); font-weight: 600; }
+
+  /* ================= LIBRARY LIST ================= */
+  .library {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 6px 24px 80px;
+  }
+  .row {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .row:last-child { border-bottom: none; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-over {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    color: var(--faint);
+    margin-bottom: 6px;
+  }
+  .row-title {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 18px;
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    margin-bottom: 3px;
+  }
+  .row-title a { text-decoration: none; }
+  .row-title a:hover { color: var(--accent-deep); }
+  .row-byline {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    color: var(--gray);
+    margin-bottom: 8px;
+  }
+  .row-desc {
+    font-family: var(--serif);
+    font-size: var(--t-body);
+    color: var(--gray);
+    line-height: 1.5;
+  }
+  .row-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .thumb {
+    width: 92px;
+    height: 92px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--serif);
+    font-size: 36px;
+    color: var(--thumb-letter);
+    background: var(--thumb-bg);
+    overflow: hidden;
+  }
+  .status-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #bdbdbd;
+    background: transparent;
+    position: relative;
+    padding: 0;
+    flex-shrink: 0;
+  }
+  .status-dot[data-s="reading"] { border-color: var(--accent); background: linear-gradient(90deg, var(--accent) 50%, transparent 50%); }
+  .status-dot[data-s="read"] { border-color: var(--accent); background: var(--accent); }
+  .status-dot[data-s="read"]::after {
+    content: "✓"; position: absolute; inset: 0; color: #fff; font-size: 13px;
+    display: flex; align-items: center; justify-content: center; font-family: var(--sans); font-weight: 700;
+  }
+  body:not(.admin) .status-dot { pointer-events: none; }
+
+  /* ================= RESOURCE DETAIL ================= */
+  .detail-wrap { max-width: 680px; margin: 0 auto; padding: 28px 24px 90px; }
+  .back-link { font-family: var(--sans); font-size: var(--t-ui); color: var(--gray); padding: 0; }
+  .back-link:hover { color: var(--ink); }
+  .detail-head { display: flex; gap: 24px; align-items: flex-start; margin: 22px 0 0; }
+  .detail-head-main { flex: 1; }
+  .detail-over { font-family: var(--sans); font-size: var(--t-ui); color: var(--faint); margin-bottom: 10px; }
+  .detail-title {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(26px, 4.5vw, 34px);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+  .detail-byline { font-family: var(--sans); font-size: var(--t-ui); color: var(--gray); }
+  .detail-byline a { color: var(--accent-deep); text-decoration: none; }
+  .detail-thumb {
+    width: 110px; height: 110px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--serif); font-size: 42px;
+    color: var(--thumb-letter); background: var(--thumb-bg);
+  }
+  .detail-statusrow { display: flex; align-items: center; gap: 10px; margin: 22px 0 6px; }
+  .detail-statusrow .status-dot { width: 24px; height: 24px; }
+  .detail-statusrow .slabel { font-family: var(--sans); font-size: var(--t-ui); color: var(--gray); }
+  .dtags { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 0; }
+  .dtag {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    padding: 5px 13px;
+    border-radius: 15px;
+    background: var(--wash);
+    color: var(--gray);
+  }
+  .notes-section { margin-top: 44px; }
+  .notes-label {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .notes-label .edit-link {
+    font-size: var(--t-ui); font-weight: 400; color: var(--faint);
+    text-decoration: underline; padding: 0; letter-spacing: 0; text-transform: none;
+  }
+  .notes-body { font-family: var(--serif); font-size: var(--t-body); line-height: 1.62; color: var(--ink); }
+  .notes-body ul { padding-left: 22px; }
+  .notes-body li { margin-bottom: 10px; }
+  .notes-body strong { font-weight: 600; }
+  .personal-notes {
+    background: var(--wash);
+    border-radius: 8px;
+    padding: 18px 20px;
+    font-family: var(--serif);
+    font-size: var(--t-body);
+    line-height: 1.6;
+    color: var(--ink);
+  }
+  .provenance { margin-top: 36px; font-family: var(--sans); font-size: var(--t-ui); color: var(--faint); }
+
+  /* ================= ADD / REVIEW ================= */
+  .add-wrap { max-width: 640px; margin: 0 auto; padding: 30px 24px 90px; }
+  .add-title { font-family: var(--sans); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .add-sub { font-family: var(--sans); font-size: var(--t-ui); color: var(--gray); margin-bottom: 24px; }
+  .add-sub a { color: var(--accent-deep); }
+  .url-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .url-input {
+    flex: 1;
+    border: none;
+    border-radius: 8px;
+    background: var(--wash);
+    padding: 11px 14px;
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    color: var(--gray);
+  }
+  .draft-banner {
+    background: var(--accent-wash);
+    border-radius: 8px;
+    padding: 13px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    color: var(--accent-deep);
+    line-height: 1.45;
+  }
+  .ai-chip {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    font-weight: 700;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 8px;
+    flex-shrink: 0;
+  }
+  .flabel .ai-chip { background: var(--accent-wash); color: var(--accent-deep); padding: 1px 7px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 16px; }
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.full { grid-column: 1 / -1; }
+  .flabel {
+    font-family: var(--sans);
+    font-size: var(--t-ui);
+    font-weight: 600;
+    color: var(--gray);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flabel .fhint { font-weight: 400; color: var(--faint); }
+  .finput, .fselect, .ftextarea {
+    border: none;
+    border-radius: 8px;
+    background: var(--wash);
+    padding: 10px 14px;
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    width: 100%;
+  }
+  .ftextarea { font-family: var(--serif); min-height: 175px; line-height: 1.55; resize: vertical; }
+  .ftextarea.personal { min-height: 88px; }
+  .finput:focus, .fselect:focus, .ftextarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; background: #fff; }
+  .tag-editor { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 14px; border-radius: 8px; background: var(--wash); }
+  .tagchip {
+    font-family: var(--sans); font-size: var(--t-ui);
+    background: #fff; border-radius: 14px;
+    padding: 5px 12px; color: var(--ink); display: inline-flex; align-items: center; gap: 7px;
+  }
+  .tagchip .x { color: var(--faint); cursor: pointer; }
+  .tagchip.suggested { background: transparent; border: 1px dashed #cfcfcf; color: var(--gray); cursor: pointer; }
+  .tagchip.suggested::before { content: "+ "; color: var(--accent-deep); }
+  .add-actions { display: flex; gap: 14px; align-items: center; margin-top: 32px; }
+  .add-actions .note { font-family: var(--sans); font-size: var(--t-ui); color: var(--faint); margin-left: auto; }
+
+  /* ================= LOCKED ================= */
+  .locked-wrap {
+    min-height: 72vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 40px 24px;
+    gap: 16px;
+  }
+  .lock-glyph {
+    width: 42px; height: 32px;
+    border: 2px solid #bdbdbd;
+    border-radius: 5px;
+    position: relative;
+    margin-top: 16px;
+  }
+  .lock-glyph::before {
+    content: ""; position: absolute; top: -15px; left: 50%; transform: translateX(-50%);
+    width: 22px; height: 22px; border: 2px solid #bdbdbd;
+    border-bottom: none; border-radius: 11px 11px 0 0;
+  }
+  .lock-glyph::after {
+    content: ""; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 6px; height: 6px; border-radius: 50%; background: #bdbdbd;
+  }
+  .locked-msg { font-family: var(--sans); font-weight: 700; font-size: 22px; letter-spacing: -0.01em; }
+  .locked-sub { font-family: var(--serif); font-size: var(--t-body); color: var(--gray); max-width: 380px; line-height: 1.55; }
+
+  /* ================= MOBILE ================= */
+  @media (max-width: 640px) {
+    .app-header { padding: 0 16px; gap: 10px; height: 54px; }
+    .collection-select { display: none; }
+    .header-search { max-width: none; }
+    .filter-bar { padding: 14px 16px 4px; }
+    .library { padding: 0 16px 60px; }
+    .row { gap: 14px; padding: 18px 0; }
+    .thumb { width: 72px; height: 72px; font-size: 28px; border-radius: 5px; }
+    .detail-wrap, .add-wrap { padding: 22px 16px 60px; }
+    .detail-head { gap: 16px; }
+    .detail-thumb { width: 84px; height: 84px; font-size: 32px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .add-actions { flex-wrap: wrap; }
+    .add-actions .note { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body class="admin">
+
+<!-- ============ MOCKUP CHROME ============ -->
+<div class="mock-chrome">
+  <span class="mock-label">Readable / Mockup v3</span>
+  <div class="mock-tabs">
+    <button class="mock-tab active" data-screen="library">1 · Library</button>
+    <button class="mock-tab" data-screen="detail">2 · Resource</button>
+    <button class="mock-tab" data-screen="add">3 · Add / Review</button>
+    <button class="mock-tab" data-screen="locked">4 · Locked</button>
+  </div>
+  <div class="mock-admin">
+    <span class="mock-label">Admin</span>
+    <button class="mock-switch on" id="adminToggle" aria-label="Toggle admin mode"></button>
+  </div>
+</div>
+
+<!-- ============ SCREEN 1: LIBRARY ============ -->
+<div class="screen active" id="screen-library">
+  <header class="app-header">
+    <a class="wordmark" href="#">Readable<span class="dot">.</span></a>
+    <select class="collection-select">
+      <option>Design × AI × Learning</option>
+      <option>+ New collection…</option>
+    </select>
+    <input class="header-search" id="libSearch" type="text" placeholder="Search…">
+    <span class="header-spacer"></span>
+    <button class="btn primary admin-only" data-goto="add">+ Add</button>
+    <button class="btn ghost admin-only">Log out</button>
+  </header>
+
+  <div class="filter-bar">
+    <div class="seg-control" id="statusSeg">
+      <button class="active" data-v="all">All</button>
+      <button data-v="unread">Unread</button>
+      <button data-v="reading">Reading</button>
+      <button data-v="read">Read</button>
+    </div>
+    <div class="type-chips" id="typeChips">
+      <button class="tchip" data-v="book">Books</button>
+      <button class="tchip" data-v="paper">Papers</button>
+      <button class="tchip" data-v="article">Articles</button>
+      <button class="tchip" data-v="video">Video</button>
+      <button class="tchip" data-v="podcast">Podcasts</button>
+      <button class="tchip" data-v="website">Websites</button>
+    </div>
+  </div>
+
+  <main class="library" id="libList"></main>
+</div>
+
+<!-- ============ SCREEN 2: RESOURCE DETAIL ============ -->
+<div class="screen" id="screen-detail">
+  <header class="app-header">
+    <a class="wordmark" href="#">Readable<span class="dot">.</span></a>
+    <span class="header-spacer"></span>
+    <button class="btn ghost admin-only">Edit</button>
+    <button class="btn ghost admin-only">Delete</button>
+  </header>
+  <div class="detail-wrap">
+    <button class="back-link" data-goto="library">← Library</button>
+
+    <div class="detail-head">
+      <div class="detail-head-main">
+        <div class="detail-over">Book · 2020 · Harvard University Press</div>
+        <h1 class="detail-title">Failure to Disrupt: Why Technology Alone Can't Transform Education</h1>
+        <div class="detail-byline">Justin Reich · <a href="#">tsl.mit.edu ↗</a></div>
+      </div>
+      <div class="detail-thumb">F</div>
+    </div>
+
+    <div class="detail-statusrow">
+      <button class="status-dot" data-s="reading" id="detailStatus"></button>
+      <span class="slabel" id="detailStatusLabel">Reading</span>
+    </div>
+
+    <div class="dtags">
+      <span class="dtag">edtech-critique</span>
+      <span class="dtag">learning-at-scale</span>
+      <span class="dtag">moocs</span>
+      <span class="dtag">history</span>
+      <span class="dtag">skeptic</span>
+    </div>
+
+    <section class="notes-section">
+      <div class="notes-label">Cliff Notes <button class="edit-link admin-only">Edit</button></div>
+      <div class="notes-body">
+        <ul>
+          <li><strong>Three genres of learning at scale</strong> — instructor-guided (MOOCs), algorithm-guided (adaptive tutors), and peer-guided — each with a long history and a recurring failure pattern.</li>
+          <li><strong>The "curse of the familiar":</strong> new technologies get domesticated into existing classroom routines rather than transforming them. Schools absorb tools; tools don't reshape schools.</li>
+          <li><strong>The Matthew effect:</strong> free learning technologies disproportionately benefit already-advantaged learners, often widening rather than closing gaps.</li>
+          <li><strong>The trap of routine assessment:</strong> computers can grade what's easily right/wrong, which quietly biases tech-mediated learning toward routine tasks — the very skills automation devalues.</li>
+          <li><strong>Core stance:</strong> incremental "tinkering" by educators, not disruption by outsiders, is how meaningful improvement actually happens.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="notes-section">
+      <div class="notes-label">My Notes <button class="edit-link admin-only">Edit</button></div>
+      <div class="personal-notes">
+        The four dilemmas (ch. 6–9) map almost one-to-one onto LLM tutor pitches in 2026 — worth a side-by-side matrix. Connect to Bloom's 2-sigma framing: Reich would say the bottleneck was never tutor scarcity. Re-read ch. 4 before the Riley/Mollick synthesis piece.
+      </div>
+    </section>
+
+    <div class="provenance">Cliff notes drafted by claude-haiku-4-5 · reviewed &amp; edited · added April 2026</div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 3: ADD / REVIEW ============ -->
+<div class="screen" id="screen-add">
+  <header class="app-header">
+    <a class="wordmark" href="#">Readable<span class="dot">.</span></a>
+    <span class="header-spacer"></span>
+    <button class="btn ghost" data-goto="library">Cancel</button>
+  </header>
+  <div class="add-wrap">
+    <h1 class="add-title">Add a resource</h1>
+    <p class="add-sub">Paste a URL and Readable drafts the entry — or <a href="#">add manually</a> for books and print.</p>
+
+    <div class="url-row">
+      <input class="url-input" value="https://www.oneusefulthing.org/p/the-homework-apocalypse" readonly>
+      <button class="btn ghost">Re-fetch</button>
+    </div>
+
+    <div class="draft-banner">
+      <span class="ai-chip">AI draft</span>
+      <span>Drafted by claude-haiku-4-5 from the fetched page. Review and edit — nothing is saved until you approve.</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="field full">
+        <label class="flabel">Title <span class="ai-chip">AI</span></label>
+        <input class="finput" value="The Homework Apocalypse">
+      </div>
+      <div class="field">
+        <label class="flabel">Author(s) <span class="ai-chip">AI</span></label>
+        <input class="finput" value="Ethan Mollick">
+      </div>
+      <div class="field">
+        <label class="flabel">Publisher / Source <span class="ai-chip">AI</span></label>
+        <input class="finput" value="One Useful Thing (Substack)">
+      </div>
+      <div class="field">
+        <label class="flabel">Type <span class="ai-chip">AI</span></label>
+        <select class="fselect">
+          <option selected>Article</option>
+          <option>Book</option><option>Paper</option>
+          <option>Video</option><option>Podcast</option><option>Website</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="flabel">Published <span class="ai-chip">AI</span></label>
+        <input class="finput" value="2023-07-01">
+      </div>
+      <div class="field">
+        <label class="flabel">Collection</label>
+        <select class="fselect"><option selected>Design × AI × Learning</option></select>
+      </div>
+      <div class="field">
+        <label class="flabel">Cover image <span class="ai-chip">AI</span></label>
+        <input class="finput" value="og-image.jpg (fetched)">
+      </div>
+      <div class="field full">
+        <label class="flabel">Tags <span class="ai-chip">AI</span> <span class="fhint">dashed = suggested, tap to add</span></label>
+        <div class="tag-editor">
+          <span class="tagchip">ai-in-education <span class="x">×</span></span>
+          <span class="tagchip">assessment <span class="x">×</span></span>
+          <span class="tagchip">writing <span class="x">×</span></span>
+          <span class="tagchip suggested">homework</span>
+          <span class="tagchip suggested">academic-integrity</span>
+        </div>
+      </div>
+      <div class="field full">
+        <label class="flabel">Cliff Notes <span class="ai-chip">AI</span> <span class="fhint">markdown — this becomes the record</span></label>
+        <textarea class="ftextarea">- **"The homework apocalypse is here":** most take-home assignments — essays, problem sets, reading summaries — can now be completed by free AI tools at passing quality, collapsing their assessment value.
+- **Effort is the casualty:** the pedagogical value of homework was the productive struggle; AI offers an effort bypass that students will predictably take.
+- **Three responses sketched:** AI-proof assessment (in-class, oral, process-based), AI-integrated assignments (require and critique AI use), and rethinking what practice is for.
+- **Tone:** urgent but constructive — a design problem for educators, not a moral panic.</textarea>
+      </div>
+      <div class="field full">
+        <label class="flabel">My Notes <span class="fhint">yours only — never AI-drafted</span></label>
+        <textarea class="ftextarea personal" placeholder="Connections, disagreements, where this fits…"></textarea>
+      </div>
+    </div>
+
+    <div class="add-actions">
+      <button class="btn primary">Save to library</button>
+      <button class="btn ghost">Discard</button>
+      <span class="note">Saving marks AI-drafted fields as reviewed.</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 4: LOCKED ============ -->
+<div class="screen" id="screen-locked">
+  <div class="locked-wrap">
+    <a class="wordmark" href="#">Readable<span class="dot">.</span></a>
+    <div class="lock-glyph"></div>
+    <div class="locked-msg">This is a private library.</div>
+    <div class="locked-sub">Access requires a link from its owner. If you arrived here by accident, there's nothing to see — politely, not even the shelves.</div>
+  </div>
+</div>
+
+<script>
+/* ===== Sample data ===== */
+const items = [
+  { t:"Why Don't Students Like School?", a:"Daniel T. Willingham", y:"2021", type:"book", status:"read",
+    d:"Nine principles of cognition translated for classroom practice. The foundation text." },
+  { t:"Mindstorms: Children, Computers, and Powerful Ideas", a:"Seymour Papert", y:"1980", type:"book", status:"read",
+    d:"Constructionism's manifesto — children as builders and debuggers of ideas. Asks the AI-era questions forty years early." },
+  { t:"Failure to Disrupt", a:"Justin Reich", y:"2020", type:"book", status:"reading", link:"detail",
+    d:"Why a century of learning-at-scale technology underdelivered, and the four dilemmas still standing." },
+  { t:"The Homework Apocalypse", a:"Ethan Mollick", y:"2023", type:"article", status:"read",
+    d:"Most take-home assignments can now be completed by free AI at passing quality. Now what?" },
+  { t:"Co-Intelligence", a:"Ethan Mollick", y:"2024", type:"book", status:"read",
+    d:"The pragmatic playbook for working with LLMs — co-worker, co-teacher, coach." },
+  { t:"Cognitive Resonance", a:"Benjamin Riley", y:"ongoing", type:"website", status:"reading",
+    d:"Cognitive-science-grounded critique of AI hype in education. The essential counterweight." },
+  { t:"One Useful Thing", a:"Ethan Mollick", y:"ongoing", type:"website", status:"read",
+    d:"Weekly hands-on experiments with what LLMs can actually do, including for teaching." },
+  { t:"The 2 Sigma Problem", a:"Benjamin S. Bloom", y:"1984", type:"paper", status:"unread",
+    d:"One-to-one tutoring outperforms classrooms by 2σ — the founding ambition of every AI-tutor pitch." },
+  { t:"How AI Could Save (Not Destroy) Education", a:"Sal Khan · TED", y:"2023", type:"video", status:"unread",
+    d:"The Khanmigo vision in 15 minutes. The strongest version of the optimist case." },
+  { t:"TeachLab", a:"Justin Reich · MIT", y:"ongoing", type:"podcast", status:"unread",
+    d:"Conversations on teaching, learning, and technology from the MIT Teaching Systems Lab." }
+];
+
+const typeLabel = { book:"Book", paper:"Paper", article:"Article", video:"Video", podcast:"Podcast", website:"Website" };
+const cycle = { unread:"reading", reading:"read", read:"unread" };
+const state = { status:"all", types:new Set(), q:"" };
+
+function renderLib(){
+  const q = state.q.toLowerCase();
+  const list = items.filter(it=>{
+    if(state.status!=="all" && it.status!==state.status) return false;
+    if(state.types.size && !state.types.has(it.type)) return false;
+    if(q && !(it.t+it.a+it.d).toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById('libList').innerHTML = list.map(it=>{
+    const idx = items.indexOf(it);
+    return `
+    <article class="row">
+      <div class="row-main">
+        <div class="row-over">${typeLabel[it.type]} · ${it.y}</div>
+        <h3 class="row-title"><a href="#" ${it.link?'data-goto="detail"':''}>${it.t}</a></h3>
+        <div class="row-byline">${it.a}</div>
+        <p class="row-desc">${it.d}</p>
+      </div>
+      <div class="row-side">
+        <button class="status-dot" data-s="${it.status}" data-i="${idx}" title="${it.status}"></button>
+        <div class="thumb">${it.t[0]}</div>
+      </div>
+    </article>`;
+  }).join('');
+  wireGoto();
+  document.querySelectorAll('#libList .status-dot').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const it = items[+b.dataset.i];
+      it.status = cycle[it.status];
+      renderLib();
+    });
+  });
+}
+
+/* ===== Filters ===== */
+document.querySelectorAll('#statusSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#statusSeg button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.status = b.dataset.v;
+    renderLib();
+  });
+});
+document.querySelectorAll('#typeChips .tchip').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    const v = c.dataset.v;
+    if(state.types.has(v)){ state.types.delete(v); c.classList.remove('active'); }
+    else { state.types.add(v); c.classList.add('active'); }
+    renderLib();
+  });
+});
+document.getElementById('libSearch').addEventListener('input', e=>{ state.q=e.target.value; renderLib(); });
+
+/* ===== Screen switching ===== */
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.querySelectorAll('.mock-tab').forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
+  if(name==='add' && !document.body.classList.contains('admin')) setAdmin(true);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll('.mock-tab').forEach(t=> t.addEventListener('click', ()=>show(t.dataset.screen)));
+function wireGoto(){
+  document.querySelectorAll('[data-goto]').forEach(el=>{
+    el.onclick = e=>{ e.preventDefault(); show(el.dataset.goto); };
+  });
+}
+wireGoto();
+
+/* ===== Admin toggle ===== */
+const toggle = document.getElementById('adminToggle');
+function setAdmin(on){
+  document.body.classList.toggle('admin', on);
+  toggle.classList.toggle('on', on);
+}
+toggle.addEventListener('click', ()=> setAdmin(!document.body.classList.contains('admin')));
+
+/* ===== Detail status cycling ===== */
+const ds = document.getElementById('detailStatus');
+ds.addEventListener('click', ()=>{
+  const next = cycle[ds.dataset.s];
+  ds.dataset.s = next;
+  document.getElementById('detailStatusLabel').textContent = next[0].toUpperCase()+next.slice(1);
+});
+
+/* ===== Add screen interactions ===== */
+document.querySelectorAll('.tagchip.suggested').forEach(c=>{
+  c.addEventListener('click', ()=>{
+    c.classList.remove('suggested');
+    c.innerHTML = c.textContent.trim() + ' <span class="x">×</span>';
+  });
+});
+
+renderLib();
+</script>
+</body>
+</html>
