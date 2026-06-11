@@ -62,7 +62,7 @@ textarea {
   align-items: center;
   gap: 14px;
   height: 60px;
-  max-width: 1080px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0 24px;
   border-bottom: 1px solid var(--hairline);
@@ -82,11 +82,24 @@ textarea {
 .header-form {
   display: flex;
   flex: 1;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+}
+
+.collection-select {
+  max-width: 230px;
+  border: 0;
+  border-radius: 17px;
+  background: var(--wash);
+  color: var(--gray);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 7px 12px;
 }
 
 .header-search {
-  width: min(100%, 340px);
+  width: min(100%, 220px);
   border: 0;
   border-radius: 20px;
   background: var(--wash);
@@ -106,6 +119,25 @@ textarea {
   background: #fff;
 }
 
+.btn {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 18px;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--gray);
+}
+
+.btn.ghost:hover {
+  color: var(--ink);
+}
+
 .filter-bar {
   display: flex;
   max-width: 720px;
@@ -113,20 +145,7 @@ textarea {
   align-items: flex-start;
   gap: 10px;
   margin: 0 auto;
-  padding: 18px 24px 4px;
-}
-
-.collection-row {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
-
-.collection-label {
-  color: var(--faint);
-  font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 600;
+  padding: 18px 24px 8px;
 }
 
 .seg-control {
@@ -176,7 +195,7 @@ textarea {
 .library {
   max-width: 720px;
   margin: 0 auto;
-  padding: 6px 24px 80px;
+  padding: 0 24px 80px;
 }
 
 .library-intro {
@@ -256,11 +275,11 @@ textarea {
 }
 
 .row-side {
+  position: relative;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
 }
 
 .thumb {
@@ -285,6 +304,14 @@ textarea {
   border: 1.5px solid #bdbdbd;
   border-radius: 50%;
   background: transparent;
+}
+
+.row-side .status-dot {
+  position: absolute;
+  top: -7px;
+  right: -3px;
+  z-index: 1;
+  background-color: var(--bg);
 }
 
 .status-dot[data-s="reading"] {
@@ -317,6 +344,14 @@ textarea {
   font-family: var(--sans);
   font-size: 14px;
   padding: 5px 13px;
+}
+
+.clear-filters {
+  color: var(--faint);
+  font-family: var(--sans);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .empty-state {
@@ -419,10 +454,15 @@ textarea {
 
   .header-form {
     width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .collection-select {
+    display: none;
   }
 
   .header-search {
-    width: 100%;
+    width: min(100%, 260px);
   }
 
   .filter-bar,

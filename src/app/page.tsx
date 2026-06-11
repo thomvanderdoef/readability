@@ -30,10 +30,13 @@ export default async function Home({ searchParams }: HomeProps) {
   const query = parseResourceQuery(params);
   const [collections, resources] = await Promise.all([
     getCollections(),
-    getResources(query),
+    getResources({
+      ...query,
+      limit: query.limit ?? 100,
+    }),
   ]);
-  const activeCollection = collections.find(
-    (collection) => collection.slug === query.collection,
+  const hasActiveFilters = Boolean(
+    query.collection || query.status || query.types?.length || query.tags?.length || query.q,
   );
 
   return (
@@ -43,9 +46,6 @@ export default async function Home({ searchParams }: HomeProps) {
           Readable<span className="wordmark-dot">.</span>
         </Link>
         <form className="header-form" action="/">
-          {query.collection ? (
-            <input type="hidden" name="collection" value={query.collection} />
-          ) : null}
           {query.status ? (
             <input type="hidden" name="status" value={query.status} />
           ) : null}
@@ -55,37 +55,32 @@ export default async function Home({ searchParams }: HomeProps) {
           {query.tags?.map((tag) => (
             <input key={tag} type="hidden" name="tag" value={tag} />
           ))}
+          <select
+            className="collection-select"
+            name="collection"
+            defaultValue={query.collection ?? ""}
+            aria-label="Collection"
+          >
+            <option value="">All collections</option>
+            {collections.map((collection) => (
+              <option key={collection.slug} value={collection.slug}>
+                {collection.name}
+              </option>
+            ))}
+          </select>
           <input
             className="header-search"
             name="q"
-            placeholder="Search the library"
+            placeholder="Search..."
             defaultValue={query.q ?? ""}
           />
+          <button className="btn ghost" type="submit">
+            Go
+          </button>
         </form>
       </header>
 
       <section className="filter-bar" aria-label="Library filters">
-        <div className="collection-row">
-          <span className="collection-label">Collection</span>
-          <div className="type-chips">
-            <FilterLink
-              href={withParam(params, "collection", undefined)}
-              isActive={!query.collection}
-            >
-              All
-            </FilterLink>
-            {collections.map((collection) => (
-              <FilterLink
-                key={collection.slug}
-                href={withParam(params, "collection", collection.slug)}
-                isActive={query.collection === collection.slug}
-              >
-                {collection.name}
-              </FilterLink>
-            ))}
-          </div>
-        </div>
-
         <div className="seg-control" aria-label="Read status">
           <FilterLink
             href={withParam(params, "status", undefined)}
@@ -120,24 +115,19 @@ export default async function Home({ searchParams }: HomeProps) {
                 href={withParam(params, "type", nextTypes)}
                 isActive={isActive}
               >
-                {capitalize(type)}
+                {typeLabel(type)}
               </FilterLink>
             );
           })}
         </div>
-
+        {hasActiveFilters ? (
+          <Link className="clear-filters" href="/">
+            Clear filters · showing {resources.length}
+          </Link>
+        ) : null}
       </section>
 
       <section className="library" aria-label="Library resources">
-        <div className="library-intro">
-          <p className="setup-kicker">Private library</p>
-          <h1>{activeCollection?.name ?? "All research resources"}</h1>
-          <p>
-            {activeCollection?.description ??
-              "A curated, AI-legible shelf of books, papers, articles, and media."}
-          </p>
-        </div>
-
         {resources.length > 0 ? (
           resources.map((resource) => (
             <ResourceRow key={resource.id} resource={resource} />
@@ -187,20 +177,17 @@ function LockedPage() {
 }
 
 function ResourceRow({ resource }: { resource: Resource }) {
-  const byline = [
-    resource.authors.join(", "),
-    resource.publisher,
-    resource.publishedDate ? new Date(resource.publishedDate).getFullYear() : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const year = resource.publishedDate
+    ? new Date(resource.publishedDate).getFullYear()
+    : null;
+  const byline = resource.authors.join(", ");
 
   return (
     <article className="row">
       <div className="row-main">
         <p className="row-over">
-          {resource.collection.name} · {capitalize(resource.type)}
-          {resource.isEssential ? " · Essential" : ""}
+          {capitalize(resource.type)}
+          {year ? ` · ${year}` : ""}
         </p>
         <h2 className="row-title">
           <Link href={`/api/resources/${resource.slug}`}>{resource.title}</Link>
@@ -209,19 +196,12 @@ function ResourceRow({ resource }: { resource: Resource }) {
         {resource.cliffNotes ? (
           <p className="row-desc">{truncate(resource.cliffNotes, 240)}</p>
         ) : null}
-        <div className="row-tags" aria-label="Tags">
-          {resource.tags.slice(0, 5).map((tag) => (
-            <Link key={tag} className="dtag" href={`/?tag=${encodeURIComponent(tag)}`}>
-              {tag}
-            </Link>
-          ))}
-        </div>
       </div>
       <div className="row-side">
+        <span className="status-dot" data-s={resource.status} aria-label={resource.status} />
         <div className="thumb" aria-hidden="true">
           {resource.title.slice(0, 1)}
         </div>
-        <span className="status-dot" data-s={resource.status} aria-label={resource.status} />
       </div>
     </article>
   );
@@ -287,6 +267,19 @@ function withParam(
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function typeLabel(type: string) {
+  const labels: Record<string, string> = {
+    article: "Articles",
+    book: "Books",
+    paper: "Papers",
+    podcast: "Podcasts",
+    video: "Video",
+    website: "Websites",
+  };
+
+  return labels[type] ?? capitalize(type);
 }
 
 function truncate(value: string, maxLength: number) {

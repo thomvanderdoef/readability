@@ -3,16 +3,24 @@ import { Pool } from "pg";
 let pool: Pool | undefined;
 
 export function getPool() {
-  if (!process.env.DATABASE_URL) {
+  const databaseUrl = process.env.DATABASE_URL;
+
+  if (!databaseUrl) {
     throw new Error("DATABASE_URL is required.");
   }
 
+  const url = new URL(databaseUrl);
+  const ssl =
+    url.searchParams.get("sslmode") === "disable"
+      ? false
+      : {
+          rejectUnauthorized: false,
+        };
+
   pool ??= new Pool({
-    connectionString: process.env.DATABASE_URL,
-    connectionTimeoutMillis: 10_000,
-    ssl: {
-      rejectUnauthorized: false,
-    },
+    connectionString: databaseUrl,
+    connectionTimeoutMillis: 30_000,
+    ssl,
   });
 
   return pool;
