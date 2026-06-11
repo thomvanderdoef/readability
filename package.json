@@ -8,11 +8,14 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "admin:hash": "tsx scripts/hash-admin-password.ts",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.1",
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
+    "iron-session": "^8.0.4",
     "next": "^16.2.9",
     "pg": "^8.21.0",
     "react": "^19.2.7",

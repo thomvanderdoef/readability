@@ -27,7 +27,7 @@ export type Resource = {
   addedAt: string;
   updatedAt: string;
   tags: string[];
-  status: string;
+  status: ResourceStatus;
   dateRead: string | null;
   cliffNotes: string | null;
   cliffNotesModel: string | null;
@@ -46,6 +46,8 @@ export type ResourceQuery = {
   limit?: number;
   offset?: number;
 };
+
+export type ResourceStatus = "unread" | "reading" | "read";
 
 type CollectionRow = QueryResultRow & {
   id: string;
@@ -70,7 +72,7 @@ type ResourceRow = QueryResultRow & {
   added_at: string;
   updated_at: string;
   tags: string[];
-  status: string;
+  status: ResourceStatus;
   date_read: string | null;
   cliff_notes: string | null;
   cliff_notes_model: string | null;
@@ -93,7 +95,9 @@ type TagRow = QueryResultRow & {
   count: string;
 };
 
-const validStatuses = new Set(["unread", "reading", "read"]);
+export const resourceStatuses = ["unread", "reading", "read"] as const;
+
+const validStatuses = new Set<string>(resourceStatuses);
 
 export function parseResourceQuery(searchParams: URLSearchParams): ResourceQuery {
   const types = uniqueValues([
@@ -222,6 +226,46 @@ export async function getResourceBySlug(slug: string) {
   return result.rows[0] ? toResource(result.rows[0]) : null;
 }
 
+export function isResourceStatus(value: unknown): value is ResourceStatus {
+  return typeof value === "string" && validStatuses.has(value);
+}
+
+export async function updateResourceStatus(
+  slug: string,
+  status?: ResourceStatus,
+) {
+  const current = await getPool().query<{ status: ResourceStatus }>(
+    `
+      select status
+      from public.resources
+      where slug = $1
+      limit 1
+    `,
+    [slug],
+  );
+
+  const currentStatus = current.rows[0]?.status;
+
+  if (!currentStatus) {
+    return null;
+  }
+
+  const nextStatus = status ?? nextResourceStatus(currentStatus);
+  const dateRead =
+    nextStatus === "read" ? new Date().toISOString().slice(0, 10) : null;
+
+  await getPool().query(
+    `
+      update public.resources
+      set status = $2, date_read = $3
+      where slug = $1
+    `,
+    [slug, nextStatus, dateRead],
+  );
+
+  return getResourceBySlug(slug);
+}
+
 function buildResourceFilters(query: ResourceQuery) {
   const where = ["c.is_research = true"];
   const values: Array<string | string[]> = [];
@@ -297,6 +341,18 @@ function resourceSelectSql() {
     from public.resources r
     join public.collections c on c.id = r.collection_id
   `;
+}
+
+function nextResourceStatus(status: ResourceStatus): ResourceStatus {
+  if (status === "unread") {
+    return "reading";
+  }
+
+  if (status === "reading") {
+    return "read";
+  }
+
+  return "unread";
 }
 
 function toCollection(row: CollectionRow): Collection {

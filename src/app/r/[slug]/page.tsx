@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { StatusDot } from "@/components/StatusDot";
+import { hasAdminSession } from "@/lib/admin-auth";
 import { hasLibraryCookieAccess, isValidLibraryKey } from "@/lib/access";
 import { getResourceBySlug, Resource } from "@/lib/resources";
 
@@ -18,7 +20,9 @@ export default async function ResourcePage({
 }: ResourcePageProps) {
   const resolvedSearchParams = await searchParams;
   const key = stringParam(resolvedSearchParams?.k);
-  const isAuthorized = isValidLibraryKey(key) || (await hasLibraryCookieAccess());
+  const isAdmin = await hasAdminSession();
+  const isAuthorized =
+    isAdmin || isValidLibraryKey(key) || (await hasLibraryCookieAccess());
 
   if (!isAuthorized) {
     return <LockedPage />;
@@ -38,6 +42,17 @@ export default async function ResourcePage({
           Readable<span className="wordmark-dot">.</span>
         </Link>
         <span className="header-spacer" />
+        {isAdmin ? (
+          <form action="/api/admin/logout" method="post">
+            <button className="btn ghost" type="submit">
+              Log out
+            </button>
+          </form>
+        ) : (
+          <Link className="btn ghost" href="/admin/login">
+            Admin
+          </Link>
+        )}
       </header>
 
       <article className="detail-wrap">
@@ -65,12 +80,12 @@ export default async function ResourcePage({
         </div>
 
         <div className="detail-statusrow">
-          <span
-            className="status-dot"
-            data-s={resource.status}
-            aria-label={resource.status}
+          <StatusDot
+            isAdmin={isAdmin}
+            showLabel
+            slug={resource.slug}
+            status={resource.status}
           />
-          <span className="slabel">{capitalize(resource.status)}</span>
         </div>
 
         {resource.tags.length ? (

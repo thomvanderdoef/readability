@@ -142,6 +142,25 @@ textarea {
   color: var(--ink);
 }
 
+.btn.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn.primary:hover {
+  background: var(--accent-deep);
+}
+
+.admin-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-actions form {
+  margin: 0;
+}
+
 .filter-bar {
   display: flex;
   max-width: 720px;
@@ -279,11 +298,11 @@ textarea {
 }
 
 .row-side {
-  position: relative;
   display: flex;
   flex-shrink: 0;
   flex-direction: column;
   align-items: flex-end;
+  gap: 10px;
 }
 
 .thumb {
@@ -310,12 +329,14 @@ textarea {
   background: transparent;
 }
 
-.row-side .status-dot {
-  position: absolute;
-  top: -7px;
-  right: -3px;
-  z-index: 1;
-  background-color: var(--bg);
+.status-dot-button {
+  cursor: pointer;
+  padding: 0;
+}
+
+.status-dot-button:disabled {
+  cursor: progress;
+  opacity: 0.65;
 }
 
 .status-dot[data-s="reading"] {
@@ -516,6 +537,66 @@ textarea {
 .provenance {
   margin: 36px 0 0;
   color: var(--faint);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+.login-wrap {
+  display: flex;
+  min-height: 72vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 40px 24px;
+}
+
+.login-panel {
+  width: min(100%, 420px);
+  border-radius: 10px;
+  background: var(--wash);
+  padding: 22px;
+}
+
+.login-title {
+  margin: 0 0 18px;
+  font-family: var(--sans);
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flabel {
+  color: var(--gray);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.finput {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: #fff;
+  font-family: var(--sans);
+  font-size: 17px;
+  padding: 10px 14px;
+}
+
+.finput:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.form-error {
+  margin: 0;
+  color: var(--accent-deep);
   font-family: var(--sans);
   font-size: 14px;
 }

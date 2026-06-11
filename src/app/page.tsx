@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { hasAdminSession } from "@/lib/admin-auth";
 import { hasLibraryCookieAccess, isValidLibraryKey } from "@/lib/access";
 import { resourceTypes } from "@/lib/library";
 import {
@@ -8,6 +9,7 @@ import {
   parseResourceQuery,
   Resource,
 } from "@/lib/resources";
+import { StatusDot } from "@/components/StatusDot";
 
 type HomeProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -20,8 +22,9 @@ const statuses = ["unread", "reading", "read"] as const;
 export default async function Home({ searchParams }: HomeProps) {
   const resolvedSearchParams = await searchParams;
   const params = toURLSearchParams(resolvedSearchParams);
+  const isAdmin = await hasAdminSession();
   const isAuthorized =
-    isValidLibraryKey(params.get("k")) || (await hasLibraryCookieAccess());
+    isAdmin || isValidLibraryKey(params.get("k")) || (await hasLibraryCookieAccess());
 
   if (!isAuthorized) {
     return <LockedPage />;
@@ -78,6 +81,19 @@ export default async function Home({ searchParams }: HomeProps) {
             Go
           </button>
         </form>
+        <div className="admin-actions">
+          {isAdmin ? (
+            <form action="/api/admin/logout" method="post">
+              <button className="btn ghost" type="submit">
+                Log out
+              </button>
+            </form>
+          ) : (
+            <Link className="btn ghost" href="/admin/login">
+              Admin
+            </Link>
+          )}
+        </div>
       </header>
 
       <section className="filter-bar" aria-label="Library filters">
@@ -130,7 +146,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <section className="library" aria-label="Library resources">
         {resources.length > 0 ? (
           resources.map((resource) => (
-            <ResourceRow key={resource.id} resource={resource} />
+            <ResourceRow key={resource.id} isAdmin={isAdmin} resource={resource} />
           ))
         ) : (
           <div className="empty-state">
@@ -176,7 +192,13 @@ function LockedPage() {
   );
 }
 
-function ResourceRow({ resource }: { resource: Resource }) {
+function ResourceRow({
+  isAdmin,
+  resource,
+}: {
+  isAdmin: boolean;
+  resource: Resource;
+}) {
   const year = resource.publishedDate
     ? new Date(resource.publishedDate).getFullYear()
     : null;
@@ -198,7 +220,11 @@ function ResourceRow({ resource }: { resource: Resource }) {
         ) : null}
       </div>
       <div className="row-side">
-        <span className="status-dot" data-s={resource.status} aria-label={resource.status} />
+        <StatusDot
+          isAdmin={isAdmin}
+          slug={resource.slug}
+          status={resource.status}
+        />
         <div className="thumb" aria-hidden="true">
           {resource.title.slice(0, 1)}
         </div>
