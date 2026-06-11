@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { DeleteResourceButton } from "@/components/DeleteResourceButton";
 import { StatusDot } from "@/components/StatusDot";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { hasLibraryCookieAccess, isValidLibraryKey } from "@/lib/access";
@@ -43,11 +44,17 @@ export default async function ResourcePage({
         </Link>
         <span className="header-spacer" />
         {isAdmin ? (
-          <form action="/api/admin/logout" method="post">
-            <button className="btn ghost" type="submit">
-              Log out
-            </button>
-          </form>
+          <div className="admin-actions">
+            <Link className="btn ghost" href={`/r/${resource.slug}/edit`}>
+              Edit
+            </Link>
+            <DeleteResourceButton slug={resource.slug} title={resource.title} />
+            <form action="/api/admin/logout" method="post">
+              <button className="btn ghost" type="submit">
+                Log out
+              </button>
+            </form>
+          </div>
         ) : (
           <Link className="btn ghost" href="/admin/login">
             Admin

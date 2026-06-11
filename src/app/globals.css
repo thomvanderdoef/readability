@@ -68,6 +68,13 @@ textarea {
   border-bottom: 1px solid var(--hairline);
 }
 
+.form-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+}
+
 .wordmark {
   font-family: var(--sans);
   font-size: 21px;
@@ -583,20 +590,154 @@ textarea {
   width: 100%;
   border: 0;
   border-radius: 8px;
-  background: #fff;
+  background: var(--wash);
   font-family: var(--sans);
   font-size: 17px;
   padding: 10px 14px;
 }
 
+.login-form .finput {
+  background: #fff;
+}
+
 .finput:focus {
   outline: 2px solid var(--accent);
   outline-offset: -1px;
+  background: #fff;
 }
 
 .form-error {
   margin: 0;
   color: var(--accent-deep);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+.add-wrap {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 30px 24px 90px;
+}
+
+.add-title {
+  margin: 0 0 6px;
+  font-family: var(--sans);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.add-sub {
+  margin: 0 0 24px;
+  color: var(--gray);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+.resource-form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.field.full {
+  grid-column: 1 / -1;
+}
+
+.fhint {
+  color: var(--faint);
+  font-weight: 400;
+}
+
+.fselect,
+.ftextarea {
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  background: var(--wash);
+  font-family: var(--sans);
+  font-size: 17px;
+  padding: 10px 14px;
+}
+
+.ftextarea {
+  min-height: 175px;
+  font-family: var(--serif);
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.ftextarea.personal {
+  min-height: 88px;
+}
+
+.fselect:focus,
+.ftextarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+  background: #fff;
+}
+
+.tag-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 54px;
+  border-radius: 8px;
+  background: var(--wash);
+  padding: 12px 14px;
+}
+
+.tagchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 5px 12px;
+}
+
+.tagchip .x {
+  color: var(--faint);
+}
+
+.tag-add-input {
+  min-width: 130px;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  padding: 5px 0;
+}
+
+.tag-add-input:focus {
+  outline: 0;
+}
+
+.check-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gray);
   font-family: var(--sans);
   font-size: 14px;
 }
@@ -706,7 +847,8 @@ textarea {
 
   .filter-bar,
   .library,
-  .detail-wrap {
+  .detail-wrap,
+  .add-wrap {
     padding-right: 16px;
     padding-left: 16px;
   }
@@ -730,4 +872,9 @@ textarea {
     height: 84px;
     font-size: 32px;
   }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
 }

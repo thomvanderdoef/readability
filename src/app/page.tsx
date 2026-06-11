@@ -83,11 +83,16 @@ export default async function Home({ searchParams }: HomeProps) {
         </form>
         <div className="admin-actions">
           {isAdmin ? (
-            <form action="/api/admin/logout" method="post">
-              <button className="btn ghost" type="submit">
-                Log out
-              </button>
-            </form>
+            <>
+              <Link className="btn primary" href="/add">
+                + Add
+              </Link>
+              <form action="/api/admin/logout" method="post">
+                <button className="btn ghost" type="submit">
+                  Log out
+                </button>
+              </form>
+            </>
           ) : (
             <Link className="btn ghost" href="/admin/login">
               Admin

@@ -49,6 +49,34 @@ export type ResourceQuery = {
 
 export type ResourceStatus = "unread" | "reading" | "read";
 
+export type ResourceWriteInput = {
+  title: string;
+  collectionSlug: string;
+  type: string;
+  url?: string | null;
+  authors?: string[];
+  publisher?: string | null;
+  publishedDate?: string | null;
+  tags?: string[];
+  status?: ResourceStatus;
+  dateRead?: string | null;
+  cliffNotes?: string | null;
+  cliffNotesModel?: string | null;
+  personalNotes?: string | null;
+  coverImageUrl?: string | null;
+  isEssential?: boolean;
+};
+
+export type ResourceWriteValidation =
+  | {
+      ok: true;
+      data: ResourceWriteInput;
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };
+
 type CollectionRow = QueryResultRow & {
   id: string;
   name: string;
@@ -230,6 +258,77 @@ export function isResourceStatus(value: unknown): value is ResourceStatus {
   return typeof value === "string" && validStatuses.has(value);
 }
 
+export function parseResourceWriteInput(value: unknown): ResourceWriteValidation {
+  if (!value || typeof value !== "object") {
+    return {
+      ok: false,
+      errors: ["Request body must be an object."],
+    };
+  }
+
+  const input = value as Record<string, unknown>;
+  const errors: string[] = [];
+  const title = stringValue(input.title);
+  const collectionSlug = stringValue(input.collectionSlug);
+  const type = stringValue(input.type);
+  const status = stringValue(input.status) || "unread";
+
+  if (!title) {
+    errors.push("title is required.");
+  }
+
+  if (!collectionSlug) {
+    errors.push("collectionSlug is required.");
+  }
+
+  if (!resourceTypes.includes(type as (typeof resourceTypes)[number])) {
+    errors.push("type is invalid.");
+  }
+
+  if (!isResourceStatus(status)) {
+    errors.push("status is invalid.");
+  }
+
+  for (const [field, rawValue] of [
+    ["publishedDate", input.publishedDate],
+    ["dateRead", input.dateRead],
+  ] as const) {
+    const date = stringValue(rawValue);
+
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      errors.push(`${field} must be YYYY-MM-DD.`);
+    }
+  }
+
+  if (errors.length) {
+    return {
+      ok: false,
+      errors,
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      title,
+      collectionSlug,
+      type,
+      url: nullableString(stringValue(input.url)),
+      authors: arrayValue(input.authors),
+      publisher: nullableString(stringValue(input.publisher)),
+      publishedDate: nullableDate(stringValue(input.publishedDate)),
+      tags: arrayValue(input.tags),
+      status: status as ResourceStatus,
+      dateRead: nullableDate(stringValue(input.dateRead)),
+      cliffNotes: nullableString(stringValue(input.cliffNotes)),
+      cliffNotesModel: nullableString(stringValue(input.cliffNotesModel)),
+      personalNotes: nullableString(stringValue(input.personalNotes)),
+      coverImageUrl: nullableString(stringValue(input.coverImageUrl)),
+      isEssential: input.isEssential === true,
+    },
+  };
+}
+
 export async function updateResourceStatus(
   slug: string,
   status?: ResourceStatus,
@@ -264,6 +363,135 @@ export async function updateResourceStatus(
   );
 
   return getResourceBySlug(slug);
+}
+
+export async function createResource(input: ResourceWriteInput) {
+  const normalized = normalizeResourceWriteInput(input);
+  const collectionId = await getCollectionId(normalized.collectionSlug);
+
+  if (!collectionId) {
+    return null;
+  }
+
+  const slug = await createUniqueSlug(slugify(normalized.title));
+
+  await getPool().query(
+    `
+      insert into public.resources (
+        collection_id,
+        slug,
+        title,
+        type,
+        url,
+        authors,
+        publisher,
+        published_date,
+        tags,
+        status,
+        date_read,
+        cliff_notes,
+        cliff_notes_model,
+        personal_notes,
+        cover_image_url,
+        source_domain,
+        is_essential
+      )
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+    `,
+    [
+      collectionId,
+      slug,
+      normalized.title,
+      normalized.type,
+      normalized.url,
+      normalized.authors,
+      normalized.publisher,
+      normalized.publishedDate,
+      normalized.tags,
+      normalized.status,
+      normalized.dateRead,
+      normalized.cliffNotes,
+      normalized.cliffNotesModel,
+      normalized.personalNotes,
+      normalized.coverImageUrl,
+      sourceDomain(normalized.url),
+      normalized.isEssential,
+    ],
+  );
+
+  return getResourceBySlug(slug);
+}
+
+export async function updateResource(slug: string, input: ResourceWriteInput) {
+  const normalized = normalizeResourceWriteInput(input);
+  const collectionId = await getCollectionId(normalized.collectionSlug);
+
+  if (!collectionId) {
+    return null;
+  }
+
+  const result = await getPool().query<{ slug: string }>(
+    `
+      update public.resources
+      set
+        collection_id = $2,
+        title = $3,
+        type = $4,
+        url = $5,
+        authors = $6,
+        publisher = $7,
+        published_date = $8,
+        tags = $9,
+        status = $10,
+        date_read = $11,
+        cliff_notes = $12,
+        cliff_notes_model = $13,
+        personal_notes = $14,
+        cover_image_url = $15,
+        source_domain = $16,
+        is_essential = $17
+      where slug = $1
+      returning slug
+    `,
+    [
+      slug,
+      collectionId,
+      normalized.title,
+      normalized.type,
+      normalized.url,
+      normalized.authors,
+      normalized.publisher,
+      normalized.publishedDate,
+      normalized.tags,
+      normalized.status,
+      normalized.dateRead,
+      normalized.cliffNotes,
+      normalized.cliffNotesModel,
+      normalized.personalNotes,
+      normalized.coverImageUrl,
+      sourceDomain(normalized.url),
+      normalized.isEssential,
+    ],
+  );
+
+  if (!result.rows[0]) {
+    return null;
+  }
+
+  return getResourceBySlug(slug);
+}
+
+export async function deleteResource(slug: string) {
+  const result = await getPool().query<{ slug: string }>(
+    `
+      delete from public.resources
+      where slug = $1
+      returning slug
+    `,
+    [slug],
+  );
+
+  return Boolean(result.rows[0]);
 }
 
 function buildResourceFilters(query: ResourceQuery) {
@@ -353,6 +581,123 @@ function nextResourceStatus(status: ResourceStatus): ResourceStatus {
   }
 
   return "unread";
+}
+
+async function getCollectionId(slug: string) {
+  const result = await getPool().query<{ id: string }>(
+    `
+      select id
+      from public.collections
+      where slug = $1
+      limit 1
+    `,
+    [slug],
+  );
+
+  return result.rows[0]?.id ?? null;
+}
+
+async function createUniqueSlug(baseSlug: string) {
+  let slug = baseSlug || "resource";
+  let suffix = 2;
+
+  while (await slugExists(slug)) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+}
+
+async function slugExists(slug: string) {
+  const result = await getPool().query<{ exists: boolean }>(
+    `
+      select exists (
+        select 1
+        from public.resources
+        where slug = $1
+      ) as exists
+    `,
+    [slug],
+  );
+
+  return result.rows[0]?.exists === true;
+}
+
+function normalizeResourceWriteInput(input: ResourceWriteInput) {
+  const status = input.status ?? "unread";
+
+  return {
+    title: input.title.trim(),
+    collectionSlug: input.collectionSlug.trim(),
+    type: input.type,
+    url: nullableString(input.url),
+    authors: uniqueValues(input.authors?.map((author) => author.trim()).filter(Boolean) ?? []),
+    publisher: nullableString(input.publisher),
+    publishedDate: nullableDate(input.publishedDate),
+    tags: uniqueValues(
+      input.tags?.map(normalizeTag).filter(Boolean) ?? [],
+    ),
+    status,
+    dateRead:
+      status === "read"
+        ? nullableDate(input.dateRead) ?? new Date().toISOString().slice(0, 10)
+        : null,
+    cliffNotes: nullableString(input.cliffNotes),
+    cliffNotesModel: nullableString(input.cliffNotesModel),
+    personalNotes: nullableString(input.personalNotes),
+    coverImageUrl: nullableString(input.coverImageUrl),
+    isEssential: input.isEssential ?? false,
+  };
+}
+
+function sourceDomain(url: string | null) {
+  if (!url) {
+    return null;
+  }
+
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 120);
+}
+
+function normalizeTag(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+function nullableString(value: string | null | undefined) {
+  const trimmed = value?.trim();
+
+  return trimmed ? trimmed : null;
+}
+
+function nullableDate(value: string | null | undefined) {
+  const trimmed = value?.trim();
+
+  return trimmed && /^\d{4}-\d{2}-\d{2}$/.test(trimmed) ? trimmed : null;
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function arrayValue(value: unknown) {
+  return Array.isArray(value)
+    ? value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => item.trim())
+        .filter(Boolean)
+    : [];
 }
 
 function toCollection(row: CollectionRow): Collection {
