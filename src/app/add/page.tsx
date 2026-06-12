@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ResourceForm } from "@/components/ResourceForm";
+import { AddResourcePanel } from "@/components/AddResourcePanel";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { getCollections } from "@/lib/resources";
 
@@ -31,9 +31,9 @@ export default async function AddResourcePage() {
       <section className="add-wrap">
         <h1 className="add-title">Add a resource</h1>
         <p className="add-sub">
-          Add manually for books, papers, articles, videos, podcasts, and sites.
+          Paste a URL and Readable drafts the entry, or fill the form manually.
         </p>
-        <ResourceForm collections={collections} mode="create" />
+        <AddResourcePanel collections={collections} />
       </section>
     </main>
   );

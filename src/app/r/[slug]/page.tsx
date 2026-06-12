@@ -82,7 +82,12 @@ export default async function ResourcePage({
             </p>
           </div>
           <div className="detail-thumb" aria-hidden="true">
-            {resource.title.slice(0, 1)}
+            {resource.coverImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={resource.coverImageUrl} alt="" />
+            ) : (
+              resource.title.slice(0, 1)
+            )}
           </div>
         </div>
 
@@ -172,19 +177,41 @@ function MarkdownLite({ value }: { value: string }) {
     <>
       {blocks.map((block) => {
         const lines = block.split("\n").map((line) => line.trim());
-        const isList = lines.every((line) => line.startsWith("- "));
+        const isList = lines.every((line) => /^[-*]\s+/.test(line));
 
         if (isList) {
           return (
             <ul key={block}>
               {lines.map((line) => (
-                <li key={line}>{line.replace(/^- /, "")}</li>
+                <li key={line}>
+                  <InlineMarkdown value={line.replace(/^[-*]\s+/, "")} />
+                </li>
               ))}
             </ul>
           );
         }
 
-        return <p key={block}>{block}</p>;
+        return (
+          <p key={block}>
+            <InlineMarkdown value={block} />
+          </p>
+        );
+      })}
+    </>
+  );
+}
+
+function InlineMarkdown({ value }: { value: string }) {
+  const parts = value.split(/(\*\*[^*]+\*\*)/g);
+
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+
+        return part;
       })}
     </>
   );

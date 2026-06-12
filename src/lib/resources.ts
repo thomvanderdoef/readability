@@ -77,6 +77,22 @@ export type ResourceWriteValidation =
       errors: string[];
     };
 
+export type CollectionWriteInput = {
+  name: string;
+  description?: string | null;
+  isResearch?: boolean;
+};
+
+export type CollectionWriteValidation =
+  | {
+      ok: true;
+      data: CollectionWriteInput;
+    }
+  | {
+      ok: false;
+      errors: string[];
+    };
+
 type CollectionRow = QueryResultRow & {
   id: string;
   name: string;
@@ -164,6 +180,56 @@ export async function getCollections() {
 
   return result.rows.map(toCollection);
 }
+
+export function parseCollectionWriteInput(value: unknown): CollectionWriteValidation {
+  if (!value || typeof value !== "object") {
+    return {
+      ok: false,
+      errors: ["Request body must be an object."],
+    };
+  }
+
+  const input = value as Record<string, unknown>;
+  const name = stringValue(input.name);
+  const errors: string[] = [];
+
+  if (!name) {
+    errors.push("name is required.");
+  }
+
+  if (errors.length) {
+    return {
+      ok: false,
+      errors,
+    };
+  }
+
+  return {
+    ok: true,
+    data: {
+      name,
+      description: nullableString(stringValue(input.description)),
+      isResearch: input.isResearch !== false,
+    },
+  };
+}
+
+export async function createCollection(input: CollectionWriteInput) {
+  const name = input.name.trim();
+  const slug = await createUniqueCollectionSlug(slugify(name));
+
+  const result = await getPool().query<CollectionRow>(
+    `
+      insert into public.collections (name, slug, description, is_research)
+      values ($1, $2, $3, $4)
+      returning id, name, slug, description, is_research, created_at
+    `,
+    [name, slug, nullableString(input.description), input.isResearch !== false],
+  );
+
+  return result.rows[0] ? toCollection(result.rows[0]) : null;
+}
+
 
 export async function getLibraryMeta() {
   const [collections, counts, tags] = await Promise.all([
@@ -609,12 +675,39 @@ async function createUniqueSlug(baseSlug: string) {
   return slug;
 }
 
+async function createUniqueCollectionSlug(baseSlug: string) {
+  let slug = baseSlug || "collection";
+  let suffix = 2;
+
+  while (await collectionSlugExists(slug)) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+}
+
 async function slugExists(slug: string) {
   const result = await getPool().query<{ exists: boolean }>(
     `
       select exists (
         select 1
         from public.resources
+        where slug = $1
+      ) as exists
+    `,
+    [slug],
+  );
+
+  return result.rows[0]?.exists === true;
+}
+
+async function collectionSlugExists(slug: string) {
+  const result = await getPool().query<{ exists: boolean }>(
+    `
+      select exists (
+        select 1
+        from public.collections
         where slug = $1
       ) as exists
     `,

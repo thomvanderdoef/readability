@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { CollectionSelect } from "@/components/CollectionSelect";
 import { hasAdminSession } from "@/lib/admin-auth";
 import { hasLibraryCookieAccess, isValidLibraryKey } from "@/lib/access";
 import { resourceTypes } from "@/lib/library";
@@ -58,19 +59,13 @@ export default async function Home({ searchParams }: HomeProps) {
           {query.tags?.map((tag) => (
             <input key={tag} type="hidden" name="tag" value={tag} />
           ))}
-          <select
-            className="collection-select"
-            name="collection"
+          <CollectionSelect
+            collections={collections}
             defaultValue={query.collection ?? ""}
-            aria-label="Collection"
-          >
-            <option value="">All collections</option>
-            {collections.map((collection) => (
-              <option key={collection.slug} value={collection.slug}>
-                {collection.name}
-              </option>
-            ))}
-          </select>
+            isAdmin={isAdmin}
+            mode="filter"
+            name="collection"
+          />
           <input
             className="header-search"
             name="q"
@@ -221,7 +216,7 @@ function ResourceRow({
         </h2>
         {byline ? <p className="row-byline">{byline}</p> : null}
         {resource.cliffNotes ? (
-          <p className="row-desc">{truncate(resource.cliffNotes, 240)}</p>
+          <p className="row-desc">{truncate(excerptMarkdown(resource.cliffNotes), 240)}</p>
         ) : null}
       </div>
       <div className="row-side">
@@ -231,7 +226,12 @@ function ResourceRow({
           status={resource.status}
         />
         <div className="thumb" aria-hidden="true">
-          {resource.title.slice(0, 1)}
+          {resource.coverImageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={resource.coverImageUrl} alt="" />
+          ) : (
+            resource.title.slice(0, 1)
+          )}
         </div>
       </div>
     </article>
@@ -319,4 +319,12 @@ function truncate(value: string, maxLength: number) {
   }
 
   return `${value.slice(0, maxLength).trim()}...`;
+}
+
+function excerptMarkdown(value: string) {
+  return value
+    .replace(/^[-*]\s+/gm, "")
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\n+/g, " ")
+    .trim();
 }

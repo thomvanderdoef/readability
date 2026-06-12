@@ -2,16 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState, useTransition } from "react";
+import { CollectionSelect } from "@/components/CollectionSelect";
 import { resourceTypes } from "@/lib/library";
 import type { Collection, Resource, ResourceStatus } from "@/lib/resources";
 
 type ResourceFormProps = {
   collections: Collection[];
+  draftKey?: string;
   mode: "create" | "edit";
-  resource?: Resource;
+  resource?: Partial<Resource>;
 };
 
-export function ResourceForm({ collections, mode, resource }: ResourceFormProps) {
+export function ResourceForm({ collections, draftKey, mode, resource }: ResourceFormProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +72,7 @@ export function ResourceForm({ collections, mode, resource }: ResourceFormProps)
   }
 
   return (
-    <form className="resource-form" id="resource-form" onSubmit={submit}>
+    <form className="resource-form" id="resource-form" key={draftKey} onSubmit={submit}>
       <div className="form-grid">
         <div className="field full">
           <label className="flabel" htmlFor="title">
@@ -93,7 +95,7 @@ export function ResourceForm({ collections, mode, resource }: ResourceFormProps)
             className="finput"
             id="authors"
             name="authors"
-            defaultValue={resource?.authors.join(", ") ?? ""}
+            defaultValue={resource?.authors?.join(", ") ?? ""}
             placeholder="Separate with commas"
           />
         </div>
@@ -145,18 +147,13 @@ export function ResourceForm({ collections, mode, resource }: ResourceFormProps)
           <label className="flabel" htmlFor="collectionSlug">
             Collection
           </label>
-          <select
-            className="fselect"
-            id="collectionSlug"
+          <CollectionSelect
+            collections={collections}
+            defaultValue={resource?.collection?.slug ?? collections[0]?.slug}
+            isAdmin
+            mode="field"
             name="collectionSlug"
-            defaultValue={resource?.collection.slug ?? collections[0]?.slug}
-          >
-            {collections.map((collection) => (
-              <option key={collection.slug} value={collection.slug}>
-                {collection.name}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="field">
